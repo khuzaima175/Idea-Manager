@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #020617;
+    color: #f8fafc;
+    font-family: 'Inter', sans-serif;
+    overflow: hidden; /* App handles scrolling internally */
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(12px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  
+  /* Subtle radial gradients for atmosphere */
+  .bg-glow-1 { position: fixed; top: -10%; right: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, transparent 70%); z-index: -1; }
+  .bg-glow-2 { position: fixed; bottom: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(129, 140, 248, 0.08) 0%, transparent 70%); z-index: -1; }
+}

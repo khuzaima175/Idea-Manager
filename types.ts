@@ -9,6 +9,7 @@ export interface Idea {
   category: 'Work' | 'Personal' | 'Creative' | 'Other';
   isFavorite: boolean;
   imageUrl?: string;
+  expansion?: string; // New field for AI Deep Dive content
 }
 
 export interface ProcessingStatus {
@@ -18,4 +19,4 @@ export interface ProcessingStatus {
   error: string | null;
 }
 
-export type ViewMode = 'list' | 'record' | 'detail';
+export type ViewMode = 'list' | 'record' | 'detail' | 'stats';

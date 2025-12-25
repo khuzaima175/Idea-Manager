@@ -7,13 +7,11 @@ const IMAGE_MODEL = "gemini-2.5-flash-image";
 
 export const processAudioIdea = async (
   audioBlob: Blob,
-  onProgress?: (msg: string) => void
+  onProgress?: (msg: string) => void,
+  shouldGenerateImage: boolean = true
 ): Promise<Omit<Idea, 'id' | 'createdAt' | 'isFavorite'>> => {
-  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("API Key is missing. Please set GEMINI_API_KEY in .env.local");
-
-  // Use the specific initialization pattern from the working version
-  const ai = new (GoogleGenAI as any)({ apiKey });
+  if (!process.env.API_KEY) throw new Error("API Key is missing.");
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   onProgress?.("Transcribing & Extracting Insight...");
   const base64Audio = await blobToBase64(audioBlob);
@@ -45,29 +43,123 @@ export const processAudioIdea = async (
     }
   });
 
-  const analysis = JSON.parse(response.text || '{}');
+  // Robust JSON parsing: clean potential markdown code blocks
+  let jsonStr = response.text || '{}';
+  jsonStr = jsonStr.replace(/^```json\n|\n```$/g, '').trim();
 
-  onProgress?.("Generating Visual Identity...");
-  let imageUrl = undefined;
+  let analysis;
   try {
-    const imageResp = await ai.models.generateContent({
-      model: IMAGE_MODEL,
-      contents: { parts: [{ text: `Minimalist, cinematic, abstract 3D art representating: ${analysis.imagePrompt}. Dark theme, glowing accents.` }] },
-      config: { imageConfig: { aspectRatio: "16:9" } }
-    });
+    analysis = JSON.parse(jsonStr);
+  } catch (e) {
+    console.error("JSON Parsing failed", e);
+    // Fallback or re-throw depending on desired UX
+    analysis = {
+      title: "Untitled Idea",
+      transcript: "Could not parse transcript.",
+      summary: "AI response format error.",
+      actionItems: [],
+      tags: [],
+      category: "Other",
+      imagePrompt: "abstract error concept"
+    };
+  }
 
-    console.log("Image Generation Response:", imageResp);
+  let imageUrl = undefined;
 
-    const imgPart = imageResp.candidates?.[0]?.content?.parts.find((p: any) => p.inlineData);
-    if (imgPart?.inlineData) {
-      imageUrl = `data:image/png;base64,${imgPart.inlineData.data}`;
+  // ONLY generate image if the flag is true
+  if (shouldGenerateImage) {
+    onProgress?.("Generating Visual Identity...");
+    try {
+      const imageResp = await ai.models.generateContent({
+        model: IMAGE_MODEL,
+        contents: { parts: [{ text: `Minimalist, cinematic, abstract 3D art representating: ${analysis.imagePrompt}. Dark theme, glowing accents.` }] },
+        config: { imageConfig: { aspectRatio: "16:9" } }
+      });
+
+      const imgPart = imageResp.candidates?.[0]?.content?.parts.find(p => p.inlineData);
+      if (imgPart?.inlineData) {
+        imageUrl = `data:image/png;base64,${imgPart.inlineData.data}`;
+      }
+    } catch (e) {
+      console.warn("Image generation failed", e);
+      // We fail silently here so the user still gets their text data
     }
-  } catch (e: any) {
-    if (e.message?.includes('429') || e.status === 429) {
-      console.error("IMAGE GENERATION FAILED (429): Quota Exceeded.");
-      console.info("NOTE: Models like 'gemini-2.5-flash-image' often have restricted quotas (often 0) for external API keys compared to the managed AI Studio environment.");
-      console.info("This is why it works in the AI Studio App Maker but fails here. You may need to wait for public availability or check your tier.");
-    } else {
+  }
+
+  return { ...analysis, imageUrl };
+};
+
+// NEW: Process text-based idea input
+export const processTextIdea = async (
+  inputText: string,
+  onProgress?: (msg: string) => void,
+  shouldGenerateImage: boolean = true
+): Promise<Omit<Idea, 'id' | 'createdAt' | 'isFavorite'>> => {
+  if (!process.env.API_KEY) throw new Error("API Key is missing.");
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  onProgress?.("Analyzing your idea...");
+
+  const response = await ai.models.generateContent({
+    model: TEXT_MODEL,
+    contents: {
+      parts: [
+        { text: `Analyze this idea and return a structured JSON object. The user wrote: "${inputText}". Include: title (creative and punchy), transcript (the original input), summary (a rich 2-3 sentence summary), actionItems (3-5 next steps), tags (3-5 relevant keywords), category (Work/Personal/Creative/Other), and an imagePrompt (for generating abstract art).` }
+      ]
+    },
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          title: { type: Type.STRING },
+          transcript: { type: Type.STRING },
+          summary: { type: Type.STRING },
+          actionItems: { type: Type.ARRAY, items: { type: Type.STRING } },
+          tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+          category: { type: Type.STRING, enum: ['Work', 'Personal', 'Creative', 'Other'] },
+          imagePrompt: { type: Type.STRING }
+        },
+        required: ['title', 'transcript', 'summary', 'actionItems', 'tags', 'category', 'imagePrompt']
+      }
+    }
+  });
+
+  let jsonStr = response.text || '{}';
+  jsonStr = jsonStr.replace(/^```json\n|\n```$/g, '').trim();
+
+  let analysis;
+  try {
+    analysis = JSON.parse(jsonStr);
+  } catch (e) {
+    console.error("JSON Parsing failed", e);
+    analysis = {
+      title: "Untitled Idea",
+      transcript: inputText,
+      summary: "Could not analyze the idea.",
+      actionItems: [],
+      tags: [],
+      category: "Other",
+      imagePrompt: "abstract concept"
+    };
+  }
+
+  let imageUrl = undefined;
+
+  if (shouldGenerateImage) {
+    onProgress?.("Generating Visual Identity...");
+    try {
+      const imageResp = await ai.models.generateContent({
+        model: IMAGE_MODEL,
+        contents: { parts: [{ text: `Minimalist, cinematic, abstract 3D art representating: ${analysis.imagePrompt}. Dark theme, glowing accents.` }] },
+        config: { imageConfig: { aspectRatio: "16:9" } }
+      });
+
+      const imgPart = imageResp.candidates?.[0]?.content?.parts.find(p => p.inlineData);
+      if (imgPart?.inlineData) {
+        imageUrl = `data:image/png;base64,${imgPart.inlineData.data}`;
+      }
+    } catch (e) {
       console.warn("Image generation failed", e);
     }
   }
@@ -75,10 +167,34 @@ export const processAudioIdea = async (
   return { ...analysis, imageUrl };
 };
 
+export const expandIdea = async (idea: Idea): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  const prompt = `You are an expert strategic consultant and creative muse. 
+  Perform a "Deep Dive" expansion on this idea.
+  
+  Title: ${idea.title}
+  Category: ${idea.category}
+  Summary: ${idea.summary}
+  Transcript: ${idea.transcript}
+
+  Instructions:
+  1. If Category is 'Work' or 'Personal': Provide a Strategic Roadmap with 3 phases and a "Potential Pitfalls" section.
+  2. If Category is 'Creative': Provide 3 "Alternative Variations" or "Sequel Ideas" and a "Mood/Tone" analysis.
+  3. If Category is 'Other': Connect this to a broader global trend and suggest a reading topic.
+  
+  Format: Return PLAIN TEXT with clear UPPERCASE HEADERS (e.g., PHASE 1: INITIATION). Do not use markdown symbols like ** or ##.`;
+
+  const result = await ai.models.generateContent({
+    model: TEXT_MODEL,
+    contents: prompt,
+  });
+
+  return result.text || "Could not generate expansion.";
+};
+
 export const createIdeaChat = (idea: Idea): Chat => {
-  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("API Key is missing.");
-  const ai = new (GoogleGenAI as any)({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   return ai.chats.create({
     model: TEXT_MODEL,
     config: {

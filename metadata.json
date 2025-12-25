@@ -1,0 +1,7 @@
+{
+  "name": "IdeaFlow AI",
+  "description": "Capture, process, and organize your thoughts with Gemini-powered voice analysis.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
