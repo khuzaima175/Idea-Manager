@@ -2,8 +2,6 @@
 
 **Idea Flow** is a high-performance, AI-powered "Mind Palace" designed to capture your thoughts at the speed of light. Whether it's a quick voice note or a typed snippet, Idea Flow uses **Gemini 2.0** to instantly turn raw data into structured insights, action items, and abstract art.
 
-![IdeaFlow Banner](https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6)
-
 ## ✨ Core Features
 
 - **🎙️ Smart Voice Capture**: Record thoughts hands-free. AI transcribes and structures them automatically.
@@ -31,7 +29,7 @@
 ### Prerequisites
 
 - Node.js (v18+)
-- A Gemini API Key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+- A Gemini API Key from Google AI
 
 ### Local Development
 
