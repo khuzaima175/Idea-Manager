@@ -39,10 +39,10 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, index, onClick, onDelete, onT
       transition={{ duration: 0.3, delay: index * 0.05 }}
       layout
       onClick={onClick}
-      className="group relative flex flex-col h-auto min-h-[320px] bg-gradient-to-br from-surface to-surface/80 border border-white/5 rounded-2xl lg:rounded-3xl overflow-hidden hover:border-white/10 active:scale-[0.98] transition-all duration-200 cursor-pointer shadow-xl hover:shadow-2xl"
+      className="group relative flex flex-col h-auto min-h-[260px] lg:min-h-[320px] bg-gradient-to-br from-surface to-surface/80 border border-white/5 rounded-2xl lg:rounded-3xl overflow-hidden hover:border-white/10 active:scale-[0.98] transition-all duration-200 cursor-pointer shadow-xl hover:shadow-2xl"
     >
       {/* Visual Header */}
-      <div className="relative h-32 lg:h-40 w-full bg-slate-900 overflow-hidden shrink-0">
+      <div className="relative h-28 lg:h-40 w-full bg-slate-900 overflow-hidden shrink-0">
         {idea.imageUrl ? (
           <motion.img
             initial={{ scale: 1.1 }}
@@ -75,8 +75,8 @@ const IdeaCard: React.FC<IdeaCardProps> = ({ idea, index, onClick, onDelete, onT
             whileTap={{ scale: 0.9 }}
             onClick={onToggleFavorite}
             className={`p-2.5 rounded-xl backdrop-blur-md border border-white/10 shadow-lg transition-all ${idea.isFavorite
-                ? 'bg-amber-500 text-white'
-                : 'bg-black/40 text-white/80 hover:bg-amber-500/80 hover:text-white'
+              ? 'bg-amber-500 text-white'
+              : 'bg-black/40 text-white/80 hover:bg-amber-500/80 hover:text-white'
               }`}
             aria-label={idea.isFavorite ? "Remove from starred" : "Add to starred"}
           >

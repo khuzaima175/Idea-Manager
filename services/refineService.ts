@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { Idea } from "../types";
 
-const MODEL_NAME = "gemini-2.0-flash";
+const MODEL_NAME = "gemini-2.5-flash";
 
 export const refineIdea = async (idea: Idea): Promise<Partial<Idea>> => {
     if (!process.env.API_KEY) {

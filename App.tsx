@@ -560,7 +560,7 @@ const App: React.FC = () => {
 
             {/* Dashboard Metrics */}
             {activeTab === 'dashboard' && (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-8 lg:mb-12">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4 mb-6 lg:mb-12">
                 {[
                   { label: 'Active Concepts', value: ideas.length, icon: BrainCircuit, gradient: 'from-sky-500 to-blue-600' },
                   { label: 'Starred', value: ideas.filter(i => i.isFavorite).length, icon: Bookmark, gradient: 'from-amber-500 to-orange-600' },
@@ -572,14 +572,14 @@ const App: React.FC = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: i * 0.05 }}
                     key={stat.label}
-                    className="glass p-4 lg:p-5 rounded-2xl flex items-center space-x-4 hover:border-white/20 transition-colors group"
+                    className="glass p-3 lg:p-5 rounded-xl lg:rounded-2xl flex items-center space-x-3 lg:space-x-4 hover:border-white/20 transition-colors group"
                   >
-                    <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg`}>
-                      <stat.icon className="w-5 h-5 text-white" />
+                    <div className={`p-2 lg:p-3 rounded-lg lg:rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg`}>
+                      <stat.icon className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
                     </div>
                     <div>
-                      <div className="text-2xl lg:text-3xl font-black text-white">{stat.value}</div>
-                      <div className="text-[9px] lg:text-[10px] font-bold uppercase tracking-widest text-slate-500">{stat.label}</div>
+                      <div className="text-lg lg:text-3xl font-black text-white">{stat.value}</div>
+                      <div className="text-[8px] lg:text-[10px] font-bold uppercase tracking-widest text-slate-500">{stat.label}</div>
                     </div>
                   </motion.div>
                 ))}
@@ -593,7 +593,7 @@ const App: React.FC = () => {
                   <button
                     key={cat}
                     onClick={() => setFilterCategory(cat)}
-                    className={`px-4 lg:px-6 py-2.5 rounded-full text-[10px] lg:text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${filterCategory === cat
+                    className={`px-3 lg:px-6 py-2 lg:py-2.5 rounded-full text-[9px] lg:text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${filterCategory === cat
                       ? 'bg-white text-background shadow-lg'
                       : 'text-slate-500 hover:text-white hover:bg-white/10'
                       }`}
@@ -609,32 +609,32 @@ const App: React.FC = () => {
               {filteredAndSortedIdeas.length === 0 ? (
                 <motion.div
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                  className="h-[50vh] flex flex-col items-center justify-center text-center"
+                  className="h-[50vh] flex flex-col items-center justify-center text-center px-4"
                 >
-                  <div className="w-24 h-24 bg-gradient-to-br from-slate-800 to-slate-900 rounded-full flex items-center justify-center mb-6 shadow-2xl">
-                    <BrainCircuit className="w-10 h-10 text-slate-700" />
+                  <div className="w-16 h-16 lg:w-24 lg:h-24 bg-gradient-to-br from-slate-800 to-slate-900 rounded-full flex items-center justify-center mb-4 lg:mb-6 shadow-2xl">
+                    <BrainCircuit className="w-8 h-8 lg:w-10 lg:h-10 text-slate-700" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">
+                  <h3 className="text-lg lg:text-xl font-bold text-white mb-1 lg:mb-2">
                     {activeTab === 'favorites' ? 'No starred ideas yet' : 'Your vault is empty'}
                   </h3>
-                  <p className="text-slate-500 mb-6 max-w-sm">
+                  <p className="text-slate-500 mb-4 lg:mb-6 max-w-xs lg:max-w-sm text-sm lg:text-base">
                     {activeTab === 'favorites'
                       ? 'Star your favorite ideas to find them here'
                       : 'Capture your first spark by recording a voice note or typing an idea'}
                   </p>
-                  <div className="flex gap-3">
+                  <div className="flex gap-2 lg:gap-3">
                     <button
                       onClick={() => setViewMode('record')}
-                      className="flex items-center gap-2 px-6 py-3 bg-primary text-background font-bold rounded-xl hover:scale-105 transition-transform"
+                      className="flex items-center gap-1.5 lg:gap-2 px-4 lg:px-6 py-2.5 lg:py-3 bg-primary text-background font-bold text-sm rounded-xl hover:scale-105 transition-transform"
                     >
-                      <Mic className="w-4 h-4" />
+                      <Mic className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                       Record
                     </button>
                     <button
                       onClick={() => setIsTextModalOpen(true)}
-                      className="flex items-center gap-2 px-6 py-3 bg-surface border border-white/10 text-white font-bold rounded-xl hover:scale-105 transition-transform"
+                      className="flex items-center gap-1.5 lg:gap-2 px-4 lg:px-6 py-2.5 lg:py-3 bg-surface border border-white/10 text-white font-bold text-sm rounded-xl hover:scale-105 transition-transform"
                     >
-                      <PenLine className="w-4 h-4" />
+                      <PenLine className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                       Type
                     </button>
                   </div>
@@ -660,7 +660,7 @@ const App: React.FC = () => {
 
       {/* Floating Action Buttons */}
       {viewMode === 'list' && (
-        <div className="fixed bottom-6 right-6 lg:bottom-10 lg:right-10 flex flex-col gap-3 z-[60]">
+        <div className="fixed bottom-5 right-4 lg:bottom-10 lg:right-10 flex flex-col gap-2 lg:gap-3 z-[60]">
           {/* Text Input Button */}
           <motion.button
             initial={{ opacity: 0, scale: 0 }}
@@ -669,10 +669,10 @@ const App: React.FC = () => {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsTextModalOpen(true)}
-            className="w-14 h-14 lg:w-16 lg:h-16 bg-surface border border-white/10 text-white rounded-2xl shadow-2xl flex items-center justify-center group"
+            className="w-11 h-11 lg:w-16 lg:h-16 bg-surface border border-white/10 text-white rounded-xl lg:rounded-2xl shadow-2xl flex items-center justify-center group"
             aria-label="Type an idea"
           >
-            <PenLine className="w-5 h-5 lg:w-6 lg:h-6 group-hover:text-primary transition-colors" />
+            <PenLine className="w-4 h-4 lg:w-6 lg:h-6 group-hover:text-primary transition-colors" />
           </motion.button>
 
           {/* Voice Recording Button */}
@@ -682,11 +682,11 @@ const App: React.FC = () => {
             whileHover={{ scale: 1.1, rotate: 5 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setViewMode('record')}
-            className="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-primary to-secondary text-background rounded-2xl shadow-[0_10px_40px_rgba(56,189,248,0.4)] flex items-center justify-center group overflow-hidden"
+            className="w-12 h-12 lg:w-20 lg:h-20 bg-gradient-to-br from-primary to-secondary text-background rounded-xl lg:rounded-2xl shadow-[0_10px_40px_rgba(56,189,248,0.4)] flex items-center justify-center group overflow-hidden"
             aria-label="Record a voice note"
           >
             <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity" />
-            <Mic className="w-7 h-7 lg:w-8 lg:h-8" />
+            <Mic className="w-5 h-5 lg:w-8 lg:h-8" />
           </motion.button>
         </div>
       )}

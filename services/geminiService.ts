@@ -2,8 +2,36 @@ import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { Idea } from "../types";
 import { blobToBase64 } from "../utils/audioUtils";
 
-const TEXT_MODEL = "gemini-3-flash-preview";
+// Primary and fallback models
+const TEXT_MODEL_PRIMARY = "gemini-3-flash-preview";
+const TEXT_MODEL_FALLBACK = "gemini-2.5-flash";
 const IMAGE_MODEL = "gemini-2.5-flash-image";
+
+// Helper to generate content with automatic fallback
+const generateWithFallback = async (
+  ai: GoogleGenAI,
+  config: any,
+  onFallback?: () => void
+): Promise<any> => {
+  try {
+    // Try primary model first
+    return await ai.models.generateContent({
+      ...config,
+      model: TEXT_MODEL_PRIMARY,
+    });
+  } catch (error: any) {
+    console.warn(`Primary model (${TEXT_MODEL_PRIMARY}) failed:`, error.message || error);
+
+    // Check if it's a quota/rate limit error or any error - fallback regardless
+    console.log(`Falling back to ${TEXT_MODEL_FALLBACK}...`);
+    onFallback?.();
+
+    return await ai.models.generateContent({
+      ...config,
+      model: TEXT_MODEL_FALLBACK,
+    });
+  }
+};
 
 export const processAudioIdea = async (
   audioBlob: Blob,
@@ -17,31 +45,34 @@ export const processAudioIdea = async (
   const base64Audio = await blobToBase64(audioBlob);
   const mimeType = audioBlob.type || 'audio/webm';
 
-  const response = await ai.models.generateContent({
-    model: TEXT_MODEL,
-    contents: {
-      parts: [
-        { inlineData: { mimeType, data: base64Audio } },
-        { text: "Analyze this voice note and return a structured JSON object. Include: title, transcript, summary, actionItems, tags, category (Work/Personal/Creative/Other), and an imagePrompt." }
-      ]
-    },
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          title: { type: Type.STRING },
-          transcript: { type: Type.STRING },
-          summary: { type: Type.STRING },
-          actionItems: { type: Type.ARRAY, items: { type: Type.STRING } },
-          tags: { type: Type.ARRAY, items: { type: Type.STRING } },
-          category: { type: Type.STRING, enum: ['Work', 'Personal', 'Creative', 'Other'] },
-          imagePrompt: { type: Type.STRING }
-        },
-        required: ['title', 'transcript', 'summary', 'actionItems', 'tags', 'category', 'imagePrompt']
+  const response = await generateWithFallback(
+    ai,
+    {
+      contents: {
+        parts: [
+          { inlineData: { mimeType, data: base64Audio } },
+          { text: "Analyze this voice note and return a structured JSON object. Include: title, transcript, summary, actionItems, tags, category (Work/Personal/Creative/Other), and an imagePrompt." }
+        ]
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            transcript: { type: Type.STRING },
+            summary: { type: Type.STRING },
+            actionItems: { type: Type.ARRAY, items: { type: Type.STRING } },
+            tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+            category: { type: Type.STRING, enum: ['Work', 'Personal', 'Creative', 'Other'] },
+            imagePrompt: { type: Type.STRING }
+          },
+          required: ['title', 'transcript', 'summary', 'actionItems', 'tags', 'category', 'imagePrompt']
+        }
       }
-    }
-  });
+    },
+    () => onProgress?.("Retrying with backup model...")
+  );
 
   // Robust JSON parsing: clean potential markdown code blocks
   let jsonStr = response.text || '{}';
@@ -100,30 +131,33 @@ export const processTextIdea = async (
 
   onProgress?.("Analyzing your idea...");
 
-  const response = await ai.models.generateContent({
-    model: TEXT_MODEL,
-    contents: {
-      parts: [
-        { text: `Analyze this idea and return a structured JSON object. The user wrote: "${inputText}". Include: title (creative and punchy), transcript (the original input), summary (a rich 2-3 sentence summary), actionItems (3-5 next steps), tags (3-5 relevant keywords), category (Work/Personal/Creative/Other), and an imagePrompt (for generating abstract art).` }
-      ]
-    },
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          title: { type: Type.STRING },
-          transcript: { type: Type.STRING },
-          summary: { type: Type.STRING },
-          actionItems: { type: Type.ARRAY, items: { type: Type.STRING } },
-          tags: { type: Type.ARRAY, items: { type: Type.STRING } },
-          category: { type: Type.STRING, enum: ['Work', 'Personal', 'Creative', 'Other'] },
-          imagePrompt: { type: Type.STRING }
-        },
-        required: ['title', 'transcript', 'summary', 'actionItems', 'tags', 'category', 'imagePrompt']
+  const response = await generateWithFallback(
+    ai,
+    {
+      contents: {
+        parts: [
+          { text: `Analyze this idea and return a structured JSON object. The user wrote: "${inputText}". Include: title (creative and punchy), transcript (the original input), summary (a rich 2-3 sentence summary), actionItems (3-5 next steps), tags (3-5 relevant keywords), category (Work/Personal/Creative/Other), and an imagePrompt (for generating abstract art).` }
+        ]
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            transcript: { type: Type.STRING },
+            summary: { type: Type.STRING },
+            actionItems: { type: Type.ARRAY, items: { type: Type.STRING } },
+            tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+            category: { type: Type.STRING, enum: ['Work', 'Personal', 'Creative', 'Other'] },
+            imagePrompt: { type: Type.STRING }
+          },
+          required: ['title', 'transcript', 'summary', 'actionItems', 'tags', 'category', 'imagePrompt']
+        }
       }
-    }
-  });
+    },
+    () => onProgress?.("Retrying with backup model...")
+  );
 
   let jsonStr = response.text || '{}';
   jsonStr = jsonStr.replace(/^```json\n|\n```$/g, '').trim();
@@ -185,10 +219,7 @@ export const expandIdea = async (idea: Idea): Promise<string> => {
   
   Format: Return PLAIN TEXT with clear UPPERCASE HEADERS (e.g., PHASE 1: INITIATION). Do not use markdown symbols like ** or ##.`;
 
-  const result = await ai.models.generateContent({
-    model: TEXT_MODEL,
-    contents: prompt,
-  });
+  const result = await generateWithFallback(ai, { contents: prompt });
 
   return result.text || "Could not generate expansion.";
 };
@@ -196,7 +227,7 @@ export const expandIdea = async (idea: Idea): Promise<string> => {
 export const createIdeaChat = (idea: Idea): Chat => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   return ai.chats.create({
-    model: TEXT_MODEL,
+    model: TEXT_MODEL_PRIMARY, // Chat uses primary model (fallback handled per-request)
     config: {
       systemInstruction: `You are an expert brainstorming partner. You are helping the user with their idea: "${idea.title}". 
       Context: ${idea.summary}. 
